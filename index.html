@@ -1,9 +1,665 @@
-
-<p >ahmed go to school at 7am</p>
-<h1>moaz go to school at 6 am</h1>
-<button>click me</button>
-<style>
-    button{
-        color:black;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الطلائع استوديو كود - Al-Tala'i Studio Code</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vsc: {
+              activity: '#333333',
+              activityActive: '#ffffff',
+              sidebar: '#252526',
+              editor: '#1e1e1e',
+              tabInactive: '#2d2d2d',
+              tabActive: '#1e1e1e',
+              border: '#3c3c3c',
+              statusBar: '#007acc',
+              lineNum: '#858585',
+              cursor: '#aeafad',
+              selection: '#264f78',
+              hover: '#2a2d2e',
+              listActive: '#37373d',
+              menu: '#323233'
+            }
+          },
+          fontFamily: {
+            mono: ['Consolas', 'Fira Code', 'Courier New', 'monospace'],
+            sans: ['Segoe UI', 'SF Pro Text', 'Helvetica Neue', 'Arial', 'sans-serif']
+          }
+        }
+      }
     }
-</style>
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- JSZip for exporting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    /* VS Code Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #1e1e1e; }
+    ::-webkit-scrollbar-thumb { background: rgba(121, 121, 121, 0.4); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 100, 100, 0.7); }
+
+    /* VS CODE DARK+ EXACT SYNTAX TOKEN COLORING */
+    .token-tag { color: #569cd6; font-weight: 500; }          /* HTML Tags: <div */
+    .token-attr { color: #9cdcfe; }                         /* HTML Attr: class, id */
+    .token-string { color: #ce9178; }                       /* Strings: "hello" */
+    .token-keyword { color: #c586c0; font-weight: 600; }     /* JS Keywords: const, let, if, return */
+    .token-control { color: #569cd6; font-weight: 600; }     /* Type/Control: function, class, new */
+    .token-function { color: #dcdcaa; }                     /* Functions: alert(), console.log() */
+    .token-variable { color: #9cdcfe; }                     /* Variables */
+    .token-number { color: #b5cea8; }                       /* Numbers: 123 */
+    .token-comment { color: #6a9955; font-style: italic; }   /* Comments: // comment */
+    .token-operator { color: #d4d4d4; }                    /* Operators: +, =, === */
+    .token-css-selector { color: #d7ba7d; }                 /* CSS Selectors: .container, #id */
+    .token-css-prop { color: #9cdcfe; }                     /* CSS Property: color, display */
+    .token-css-val { color: #ce9178; }                      /* CSS Value: red, flex */
+
+    /* Perfect Synchronized Editor Overlay */
+    .editor-font {
+      font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 21px;
+      tab-size: 2;
+      letter-spacing: 0px;
+    }
+
+    /* Prevent selection highlight mismatch */
+    #editor-input::selection {
+      background-color: #264f78;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="h-full bg-vsc-editor text-gray-200 font-sans flex flex-col overflow-hidden select-none dir-rtl">
+
+  <!-- Top Menu / Title Bar -->
+  <header class="h-8 bg-vsc-menu border-b border-vsc-border flex items-center justify-between px-3 shrink-0 text-xs text-gray-300">
+    <div class="flex items-center space-x-3 space-x-reverse">
+      <!-- VS Code Logo & Title -->
+      <div class="flex items-center space-x-2 space-x-reverse font-medium text-white">
+        <i class="fa-brands fa-square-js text-[#007acc] text-base"></i>
+        <span class="tracking-wide">الطلائع استوديو كود - Al-Tala'i Studio Code</span>
+      </div>
+      <div class="h-3.5 w-px bg-vsc-border"></div>
+      
+      <!-- Classic Menus -->
+      <nav class="flex items-center space-x-0.5 space-x-reverse text-2xs text-gray-300">
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">ملف</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">تعديل</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">عرض</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">الانتقال</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">تشغيل</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">المستكشف</button>
+        <button class="hover:bg-vsc-hover px-2 py-0.5 rounded">مساعدة</button>
+      </nav>
+    </div>
+
+    <!-- Quick Run & Export Controls -->
+    <div class="flex items-center space-x-2 space-x-reverse">
+      <!-- Play/Run Button -->
+      <button id="btn-run" class="bg-[#0e639c] hover:bg-[#1177bb] text-white px-3 py-1 rounded text-2xs font-semibold flex items-center space-x-1.5 space-x-reverse transition shadow active:scale-95">
+        <i class="fa-solid fa-play text-3xs"></i>
+        <span>▶ تشغيل الموقع (Ctrl+Enter)</span>
+      </button>
+
+      <!-- ZIP Download -->
+      <button id="btn-export" class="bg-vsc-tabInactive hover:bg-vsc-hover border border-vsc-border text-gray-300 px-2 py-1 rounded text-2xs transition" title="تحميل المشروع كـ ZIP">
+        <i class="fa-solid fa-download ml-1"></i>تصدير ZIP
+      </button>
+    </div>
+  </header>
+
+  <!-- IDE Main Body Grid -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Activity Bar (Far Right in RTL) -->
+    <aside class="w-12 bg-vsc-activity border-l border-vsc-border flex flex-col justify-between items-center py-2 shrink-0 z-20">
+      <div class="flex flex-col space-y-3 text-gray-400 w-full">
+        <button data-panel="explorer" class="activity-tab active w-full py-2.5 flex justify-center text-vsc-activityActive border-r-2 border-[#007acc]" title="المستكشف (Explorer)">
+          <i class="fa-solid fa-copy text-lg"></i>
+        </button>
+        <button data-panel="search" class="activity-tab w-full py-2.5 flex justify-center hover:text-white" title="بحث (Search)">
+          <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </button>
+        <button data-panel="source" class="activity-tab w-full py-2.5 flex justify-center hover:text-white" title="إدارة المصدر (Source Control)">
+          <i class="fa-solid fa-code-branch text-lg"></i>
+        </button>
+        <button data-panel="debug" class="activity-tab w-full py-2.5 flex justify-center hover:text-white" title="تشغيل واستكشاف (Run & Debug)">
+          <i class="fa-solid fa-bug text-lg"></i>
+        </button>
+        <button data-panel="extensions" class="activity-tab w-full py-2.5 flex justify-center hover:text-white" title="الامتدادات (Extensions)">
+          <i class="fa-solid fa-cubes text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col items-center space-y-3 text-gray-400">
+        <button class="hover:text-white"><i class="fa-solid fa-circle-user text-lg"></i></button>
+        <button class="hover:text-white" id="btn-settings"><i class="fa-solid fa-gear text-lg"></i></button>
+      </div>
+    </aside>
+
+    <!-- Explorer Sidebar Drawer -->
+    <div id="sidebar" class="w-60 bg-vsc-sidebar border-l border-vsc-border flex flex-col shrink-0">
+      <div class="h-9 px-3 border-b border-vsc-border flex items-center justify-between text-3xs uppercase tracking-wider text-gray-400 font-bold">
+        <span>المستكشف : PROJECT</span>
+        <div class="flex items-center space-x-1 space-x-reverse">
+          <button id="btn-new-file" title="ملف جديد" class="p-1 hover:text-white"><i class="fa-solid fa-file-circle-plus"></i></button>
+          <button id="btn-refresh" title="تحديث" class="p-1 hover:text-white"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+      </div>
+
+      <!-- File Tree List -->
+      <div class="flex-1 overflow-y-auto p-1 font-mono text-xs">
+        <div class="px-2 py-1 text-2xs text-gray-400 font-sans font-semibold flex items-center">
+          <i class="fa-solid fa-chevron-down ml-1.5 text-3xs"></i>
+          <span>TALAE-APP</span>
+        </div>
+        <div id="file-list" class="space-y-0.5 pr-2"></div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Split Container -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0">
+
+      <!-- Code Editor Panel (Left Pane) -->
+      <div class="flex-1 flex flex-col min-w-0 bg-vsc-editor border-l border-vsc-border relative">
+
+        <!-- Tabs Navigation Bar -->
+        <div id="tabs-container" class="h-9 bg-[#252526] border-b border-vsc-border flex items-center overflow-x-auto no-scrollbar"></div>
+
+        <!-- Breadcrumb Bar -->
+        <div class="h-6 bg-vsc-editor border-b border-vsc-border/50 flex items-center px-3 text-3xs text-gray-400 font-mono space-x-1 space-x-reverse">
+          <span>talae-app</span>
+          <span>&gt;</span>
+          <span id="breadcrumb-file" class="text-gray-200">index.html</span>
+        </div>
+
+        <!-- Code Editor Area -->
+        <div class="flex-1 flex relative overflow-hidden">
+          
+          <!-- Line Numbers -->
+          <div id="line-numbers" class="w-12 bg-vsc-editor border-l border-vsc-border/30 py-2 text-left pl-2 text-vsc-lineNum font-mono text-xs leading-[21px] select-none shrink-0 overflow-hidden">
+            1
+          </div>
+
+          <!-- Synchronized Editor Canvas -->
+          <div class="flex-1 relative h-full overflow-hidden">
+            <!-- Syntax Token Layer -->
+            <pre id="editor-overlay" class="absolute inset-0 p-2 font-mono editor-font overflow-auto text-transparent pointer-events-none z-0 whitespace-pre" dir="ltr" aria-hidden="true"></pre>
+
+            <!-- Input Textarea -->
+            <textarea id="editor-input" spellcheck="false" class="absolute inset-0 p-2 font-mono editor-font bg-transparent text-[#d4d4d4] resize-none outline-none z-10 caret-white whitespace-pre" dir="ltr" placeholder="// اكتب أكوادك هنا..."></textarea>
+          </div>
+        </div>
+
+        <!-- VS Code Status Bar -->
+        <footer class="h-5 bg-vsc-statusBar text-white flex items-center justify-between px-3 text-3xs select-none shrink-0 z-10">
+          <div class="flex items-center space-x-3 space-x-reverse">
+            <span class="bg-[#005999] px-1.5 py-0.5 rounded"><i class="fa-solid fa-remote ml-1"></i>الطلائع Studio</span>
+            <span id="stat-pos"><i class="fa-solid fa-arrow-pointer ml-1"></i>السطر 1, العمود 1</span>
+          </div>
+          <div class="flex items-center space-x-3 space-x-reverse">
+            <span id="stat-lang" class="uppercase font-bold">HTML</span>
+            <span>UTF-8</span>
+            <span>4 مسافات</span>
+            <span>VS Code Dark+</span>
+          </div>
+        </footer>
+      </div>
+
+      <!-- Right Pane: Live Render View & Terminal -->
+      <div id="preview-section" class="w-full md:w-1/2 flex flex-col bg-[#121212] shrink-0 border-r border-vsc-border">
+        
+        <!-- Live Window Title Header -->
+        <div class="h-9 bg-vsc-sidebar border-b border-vsc-border flex items-center justify-between px-3 text-xs text-gray-300">
+          <div class="flex items-center space-x-2 space-x-reverse font-semibold">
+            <i class="fa-solid fa-globe text-emerald-400"></i>
+            <span>المعاينة المباشرة للموقع (Live Web App)</span>
+          </div>
+          <div class="flex items-center space-x-2 space-x-reverse">
+            <button id="btn-reload-frame" class="hover:text-white p-1" title="إعادة تحميل المعاينة"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Render Window Frame -->
+        <div id="frame-wrapper" class="flex-1 bg-white relative overflow-hidden flex items-center justify-center">
+          <iframe id="web-preview" class="w-full h-full bg-white border-none shadow-lg"></iframe>
+        </div>
+
+        <!-- Integrated Terminal / Console Panel -->
+        <div class="h-44 bg-[#1e1e1e] border-t border-vsc-border flex flex-col shrink-0">
+          <div class="h-7 bg-vsc-sidebar border-b border-vsc-border px-3 flex items-center justify-between text-3xs font-semibold uppercase text-gray-400">
+            <div class="flex items-center space-x-3 space-x-reverse">
+              <span class="text-white border-b-2 border-[#007acc] pb-1"><i class="fa-solid fa-terminal ml-1"></i>TERMINAL / KONSOL</span>
+            </div>
+            <button id="btn-clear-terminal" class="hover:text-white" title="مسح السجل"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+          
+          <!-- Terminal Logs -->
+          <div id="terminal-body" class="flex-1 p-2 font-mono text-xs overflow-y-auto space-y-1 text-gray-300" dir="ltr">
+            <div class="text-gray-500 italic text-2xs">[الطلائع Console]: جاهز لالتقاط مخرجات console.log والأخطاء البرمجية...</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Initial Default Project Template
+    const defaultProject = {
+      'index.html': {
+        name: 'index.html',
+        lang: 'html',
+        content: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>موقعي التفاعلي</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 مرحباً بك في موقعك التفاعلي</h1>
+    <p>تم إنشاؤه عبر <strong>الطلائع استوديو كود</strong> بألوان وتحكم كامليْن.</p>
+    
+    <button id="action-btn">اضغط للتجربة</button>
+    <div id="result"></div>
+  </div>
+
+  <script src="script.js"><\/script>
+</body>
+</html>`
+      },
+      'style.css': {
+        name: 'style.css',
+        lang: 'css',
+        content: `/* تنسيقات الموقع البصرية */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.card {
+  background: #161b22;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid #30363d;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  max-width: 400px;
+}
+
+h1 {
+  color: #58a6ff;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+button {
+  background-color: #238636;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 15px;
+}
+
+button:hover {
+  background-color: #2ea043;
+}`
+      },
+      'script.js': {
+        name: 'script.js',
+        lang: 'javascript',
+        content: `// البرمجة التفاعلية للموقع
+let counter = 0;
+const button = document.getElementById('action-btn');
+const result = document.getElementById('result');
+
+console.log("تم تشغيل التطبيق بنجاح من محرر الطلائع!");
+
+if (button) {
+  button.addEventListener('click', () => {
+    counter++;
+    result.innerHTML = \`<p style="color:#7ee787; margin-top:15px;">تم النقر \${counter} مرات!</p>\`;
+    console.log(\`تم الضغط على الزر، العدد الحالي: \${counter}\`);
+  });
+}`
+      }
+    };
+
+    // State Management
+    let files = JSON.parse(localStorage.getItem('talae_vscode_files')) || defaultProject;
+    let activeFile = localStorage.getItem('talae_vscode_active') || 'index.html';
+    let openTabs = JSON.parse(localStorage.getItem('talae_vscode_tabs')) || ['index.html', 'style.css', 'script.js'];
+
+    // DOM References
+    const editorInput = document.getElementById('editor-input');
+    const editorOverlay = document.getElementById('editor-overlay');
+    const lineNumbers = document.getElementById('line-numbers');
+    const fileList = document.getElementById('file-list');
+    const tabsContainer = document.getElementById('tabs-container');
+    const webPreview = document.getElementById('web-preview');
+    const terminalBody = document.getElementById('terminal-body');
+    const statPos = document.getElementById('stat-pos');
+    const statLang = document.getElementById('stat-lang');
+    const breadcrumbsFile = document.getElementById('breadcrumb-file');
+
+    // VS CODE SYNTAX TOKENIZER ENGINE
+    function tokenizeCode(code, lang) {
+      let escaped = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      if (lang === 'html') {
+        return escaped
+          .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="token-comment">$1</span>')
+          .replace(/(&lt;\/?[a-zA-Z0-9\-]+)/g, '<span class="token-tag">$1</span>')
+          .replace(/([a-zA-Z\-]+)=/g, '<span class="token-attr">$1</span>=')
+          .replace(/(["'])(.*?)\1/g, '<span class="token-string">$1$2$1</span>');
+      } 
+      else if (lang === 'css') {
+        return escaped
+          .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="token-comment">$1</span>')
+          .replace(/([^\r\n,{}]+)(?=\s*\{)/g, '<span class="token-css-selector">$1</span>')
+          .replace(/([a-zA-Z\-]+)(?=\s*:)/g, '<span class="token-css-prop">$1</span>')
+          .replace(/(:\s*)([^;\}]+)/g, '$1<span class="token-css-val">$2</span>');
+      } 
+      else {
+        // Javascript Tokenization
+        const keywords = ['const', 'let', 'var', 'if', 'else', 'return', 'for', 'while', 'import', 'from', 'export', 'default', 'async', 'await'];
+        const controls = ['function', 'class', 'new', 'try', 'catch', 'throw'];
+
+        return escaped
+          .replace(/(\/\/.inline*|\/\*[\s\S]*?\*\/)/g, '<span class="token-comment">$1</span>')
+          .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '<span class="token-string">$&</span>')
+          .replace(/\b(\d+)\b/g, '<span class="token-number">$1</span>')
+          .replace(new RegExp(`\\b(${keywords.join('|')})\\b`, 'g'), '<span class="token-keyword">$1</span>')
+          .replace(new RegExp(`\\b(${controls.join('|')})\\b`, 'g'), '<span class="token-control">$1</span>')
+          .replace(/\b([a-zA-Z_]\w*)(?=\()/g, '<span class="token-function">$1</span>');
+      }
+    }
+
+    // Synchronize Code View
+    function updateEditorState() {
+      if (!activeFile || !files[activeFile]) return;
+
+      const code = editorInput.value;
+      files[activeFile].content = code;
+
+      // Update Line Numbers
+      const lines = code.split('\n').length;
+      lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+
+      // Update Syntax Overlay
+      editorOverlay.innerHTML = tokenizeCode(code, files[activeFile].lang) + '\n';
+
+      // Store in LocalStorage
+      localStorage.setItem('talae_vscode_files', JSON.stringify(files));
+      localStorage.setItem('talae_vscode_active', activeFile);
+      localStorage.setItem('talae_vscode_tabs', JSON.stringify(openTabs));
+    }
+
+    // Render Explorer Tree
+    function renderFileList() {
+      fileList.innerHTML = '';
+      Object.keys(files).forEach(fName => {
+        const file = files[fName];
+        const isActive = fName === activeFile;
+        const item = document.createElement('div');
+
+        let icon = 'fa-file-code text-blue-400';
+        if (fName.endsWith('.html')) icon = 'fa-html5 text-orange-500';
+        else if (fName.endsWith('.css')) icon = 'fa-css3-alt text-blue-400';
+        else if (fName.endsWith('.js')) icon = 'fa-square-js text-yellow-400';
+
+        item.className = `flex items-center justify-between px-2 py-1 cursor-pointer rounded text-xs ${
+          isActive ? 'bg-vsc-listActive text-white font-medium' : 'hover:bg-vsc-hover text-gray-400'
+        }`;
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-2 space-x-reverse truncate">
+            <i class="fa-brands ${icon} text-sm"></i>
+            <span class="truncate">${file.name}</span>
+          </div>
+          <button class="delete-btn opacity-0 hover:opacity-100 hover:text-red-400 p-0.5" title="حذف الملف">
+            <i class="fa-solid fa-xmark text-2xs"></i>
+          </button>
+        `;
+
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.delete-btn')) {
+            e.stopPropagation();
+            deleteFile(fName);
+          } else {
+            if (!openTabs.includes(fName)) openTabs.push(fName);
+            switchToFile(fName);
+          }
+        });
+
+        fileList.appendChild(item);
+      });
+    }
+
+    // Render Tab Headers
+    function renderTabs() {
+      tabsContainer.innerHTML = '';
+      openTabs.forEach(fName => {
+        if (!files[fName]) return;
+        const isActive = fName === activeFile;
+        const tab = document.createElement('div');
+
+        tab.className = `h-full px-3 flex items-center space-x-2 space-x-reverse border-l border-vsc-border text-xs cursor-pointer select-none shrink-0 ${
+          isActive ? 'bg-vsc-tabActive text-white border-t-2 border-t-[#007acc]' : 'bg-vsc-tabInactive text-gray-400 hover:bg-vsc-hover'
+        }`;
+
+        tab.innerHTML = `
+          <span>${fName}</span>
+          <i class="fa-solid fa-xmark text-2xs hover:text-red-400 rounded p-0.5 close-tab"></i>
+        `;
+
+        tab.addEventListener('click', (e) => {
+          if (e.target.classList.contains('close-tab')) {
+            e.stopPropagation();
+            closeTab(fName);
+          } else {
+            switchToFile(fName);
+          }
+        });
+
+        tabsContainer.appendChild(tab);
+      });
+    }
+
+    function switchToFile(fName) {
+      if (!files[fName]) return;
+      activeFile = fName;
+      editorInput.value = files[fName].content;
+      statLang.textContent = files[fName].lang;
+      breadcrumbsFile.textContent = fName;
+
+      renderTabs();
+      renderFileList();
+      updateEditorState();
+    }
+
+    function closeTab(fName) {
+      openTabs = openTabs.filter(t => t !== fName);
+      if (activeFile === fName) {
+        activeFile = openTabs[openTabs.length - 1] || '';
+      }
+      renderTabs();
+      if (activeFile) switchToFile(activeFile);
+      else editorInput.value = '';
+    }
+
+    function deleteFile(fName) {
+      if (Object.keys(files).length <= 1) {
+        alert('يجب الإبقاء على ملف واحد على الأقل داخل مشروعك!');
+        return;
+      }
+      delete files[fName];
+      closeTab(fName);
+      renderFileList();
+    }
+
+    // Execute & Render Live Web App inside Preview Window
+    function runProject() {
+      terminalBody.innerHTML = '';
+
+      const html = files['index.html'] ? files['index.html'].content : '';
+      const css = files['style.css'] ? files['style.css'].content : '';
+      const js = files['script.js'] ? files['script.js'].content : '';
+
+      // Intercept iframe console logs
+      const consoleScript = `
+        <script>
+          (function() {
+            const send = (type, args) => {
+              window.parent.postMessage({
+                source: 'TALAE_WEB_CONSOLE',
+                type: type,
+                msg: Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')
+              }, '*');
+            };
+            console.log = (...a) => send('log', a);
+            console.error = (...a) => send('error', a);
+            console.warn = (...a) => send('warn', a);
+          })();
+        <\/script>
+      `;
+
+      const documentBlob = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>${css}</style>
+          ${consoleScript}
+        </head>
+        <body>
+          ${html}
+          <script>${js}<\/script>
+        </body>
+        </html>
+      `;
+
+      webPreview.srcdoc = documentBlob;
+    }
+
+    // Terminal Logger Receiver
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.source === 'TALAE_WEB_CONSOLE') {
+        const entry = document.createElement('div');
+        const isErr = e.data.type === 'error';
+        const isWarn = e.data.type === 'warn';
+
+        entry.className = `flex items-center space-x-2 space-x-reverse ${
+          isErr ? 'text-red-400' : isWarn ? 'text-yellow-400' : 'text-gray-200'
+        }`;
+
+        entry.innerHTML = `<span class="text-2xs text-gray-500">[${new Date().toLocaleTimeString()}]</span> <span>${e.data.msg}</span>`;
+        terminalBody.appendChild(entry);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+      }
+    });
+
+    // Event Bindings
+    window.addEventListener('DOMContentLoaded', () => {
+      renderFileList();
+      renderTabs();
+      switchToFile(activeFile);
+      runProject();
+
+      // Text Input Event & Scroll Sync
+      editorInput.addEventListener('input', updateEditorState);
+      editorInput.addEventListener('scroll', () => {
+        editorOverlay.scrollTop = editorInput.scrollTop;
+        editorOverlay.scrollLeft = editorInput.scrollLeft;
+        lineNumbers.scrollTop = editorInput.scrollTop;
+      });
+
+      // Cursor Position Tracker
+      editorInput.addEventListener('keyup', () => {
+        const cursor = editorInput.selectionStart;
+        const textBefore = editorInput.value.substring(0, cursor);
+        const lines = textBefore.split('\n');
+        const currentLine = lines.length;
+        const currentCol = lines[lines.length - 1].length + 1;
+        statPos.innerHTML = `<i class="fa-solid fa-arrow-pointer ml-1"></i>السطر ${currentLine}, العمود ${currentCol}`;
+      });
+
+      // Shortcut Ctrl+Enter to Run
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          runProject();
+        }
+      });
+
+      document.getElementById('btn-run').addEventListener('click', runProject);
+      document.getElementById('btn-reload-frame').addEventListener('click', runProject);
+
+      // Create File Action
+      document.getElementById('btn-new-file').addEventListener('click', () => {
+        const fileName = prompt('أدخل اسم الملف الجديد (مثال: app.js أو main.css):');
+        if (fileName && !files[fileName]) {
+          const ext = fileName.split('.').pop();
+          files[fileName] = {
+            name: fileName,
+            lang: ext === 'js' ? 'javascript' : ext,
+            content: `/* ${fileName} */`
+          };
+          openTabs.push(fileName);
+          switchToFile(fileName);
+        }
+      });
+
+      // Clear Console
+      document.getElementById('btn-clear-terminal').addEventListener('click', () => {
+        terminalBody.innerHTML = '';
+      });
+
+      // ZIP Exporter
+      document.getElementById('btn-export').addEventListener('click', () => {
+        const zip = new JSZip();
+        Object.keys(files).forEach(fName => zip.file(fName, files[fName].content));
+        zip.generateAsync({ type: 'blob' }).then(content => {
+          const downloadAnchor = document.createElement('a');
+          downloadAnchor.href = URL.createObjectURL(content);
+          downloadAnchor.download = 'al-talai-vscode-project.zip';
+          downloadAnchor.click();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
